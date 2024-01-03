@@ -1,47 +1,12 @@
-import chardet
+#import chardet
 import os
 import xml.etree.ElementTree as ET
 import Levenshtein
 import re
 import logging
 import tkinter as tk
+from masklib import ask_to_mask, namebody, get_elements, detect_encoding, utf8_to_iso8859, detectfile
 
-
-
-def get_elements(element, lista):
-    if element.tag == 'InvoiceRow' or  element.tag == 'InvoiceDetails':
-        lista.append(element)
-
-    for child in element:
-        get_elements(child, lista)
-
-    return lista
-
-
-def namebody(name):
-    length = len(name)
-    if length < 4:
-        return name
-    
-    if "kk" in name or "pp" in name or "tt" in name:
-        if length == 4:
-            return name[:-2]
-        return name[:-3]   
-
-    return name[:-2] 
-
-def ask_to_mask():
-
-    while True:
-        user_input = input("mask y/n/enter for no : ")
-        if user_input.lower() == "":
-            return False
-        elif user_input.lower() == "y":
-            return True
-        elif user_input.lower() == "n":
-            return False
-        else:
-            print("Invalid input. Please enter either 'yes' or 'no'.")
 
 def tobe_masked(word, namelist, wholetext):
     #go through all names to be checked 
@@ -171,84 +136,82 @@ def process_element(element, namelist, file_name, checked):
 
 
  
-def detect_encoding(input_bytes):
-    result = chardet.detect(input_bytes)
-    return result['encoding']
+
 
 
 def main():
     logging.info('-------------------------------------------------------------------------------------')
-   
-    #strings that we know the answer already
-    checked = []
-    checked_path = "C:/TIEDOSTOT/python/checked.txt"
+    sourcedirs = []
+    targetdirs = []
+    sourcedirs.append("C:/TIEDOSTOT/python/masking/sourcefiles/vero")
+    sourcedirs.append("C:/TIEDOSTOT/python/masking/sourcefiles/tilastokeskus")
+    targetdirs.append("C:/TIEDOSTOT/python/masking/sourcefiles/vero")
+    targetdirs.append("C:/TIEDOSTOT/python/masking/sourcefiles/tilastokeskus")
 
+   
+    basedir = "C:/TIEDOSTOT/python/masking"
+
+    checked = []
+    checked_path = "C:/TIEDOSTOT/python/masking/checked.txt"
 
     if os.path.exists(checked_path):
         with open(checked_path, 'r', encoding="ISO-8859-15") as checkedfile:
             checked = [line.strip() for line in checkedfile]      
 
     namelist =[]
+    names_path = "C:/TIEDOSTOT/python/masking/sukunimet"
+
+#    print(detectfile(names_path))
     
-#    with open("C:/TIEDOSTOT/python/nimet.txt", 'r', encoding="Latin-1") as file:
-#    with open("C:/TIEDOSTOT/python/output_iso8859_15.txt", 'r', encoding="ISO-8859-15") as file:
-    
-    with open("C:/TIEDOSTOT/python/output_iso8859_15.txt", 'r') as file:
-     
+
+    with open(names_path, 'r',encoding="ISO-8859-15") as file:
         namelist = [line.strip() for line in file]
 
-  
 
+    for directory_path in sourcedirs:
+        logging.info('Processing folder: '+directory_path)
+        for rootdir, dirs, files in os.walk(directory_path):
+            for file_name in files:
+                file_path = os.path.join(rootdir, file_name)
+    #            tree = ET.parse(file_path)
+    #            root = tree.getroot()
 
-    
-#    list_length = len(namelist)
-#    logging.info(f"names: {list_length}" )
-    
-#    directory_path = "C:/TIEDOSTOT/python/xml/vero"
-    directory_path = "C:/TIEDOSTOT/python/ISO/tilastokeskus"
-
-    for rootdir, dirs, files in os.walk(directory_path):
-        for file_name in files:
-            file_path = os.path.join(rootdir, file_name)
-#            tree = ET.parse(file_path)
-#            root = tree.getroot()
-
-            with open(file_path, 'r',  encoding="Latin-1") as xml_file:
-                xml_content = xml_file.read()
-            root = ET.fromstring(xml_content)
+                with open(file_path, 'r',  encoding="Latin-1") as xml_file:
+                    xml_content = xml_file.read()
+                root = ET.fromstring(xml_content)
 
 
 
 
 
-            lista = []
-            elements_to_process = get_elements(root, lista)
+                lista = []
+                elements_to_process = get_elements(root, lista)
 
-        
-         
-            for selected_element in elements_to_process:
-                if selected_element is not None:
-                  #  logging.info('Element: '+selected_element.tag)
-                    for child in selected_element:
-                        if child.tag == "RowDefinitionHeaderText" or child.tag == "ArticleName" or child.tag == "RowDefinitionDetails":
-                         #   logging.info('Child: '+child.tag)
-                            encoding = detect_encoding(b'child.text')
-                            print(encoding)
-
-                            process_element(child, namelist, file_name,checked)
-
-                else:
-                    print("Selected element not found.")
             
-            new_file_path = os.path.join("C:/TIEDOSTOT/python/mod/tilastokeskus", file_name)
-            #logging.info('Writing file out: '+new_file_path)
-            xml_version="1.0"
-            encoding="ISO-8859-15"
-            xml_declaration = f'<?xml version="{xml_version}" encoding="{encoding}"?>\n'
             
-     #       with open(new_file_path, "wb") as file:
-     #           #file.write(xml_declaration.encode(encoding))
-     #           tree.write(file, encoding=encoding)
+                for selected_element in elements_to_process:
+                    if selected_element is not None:
+                    #  logging.info('Element: '+selected_element.tag)
+                        for child in selected_element:
+                            if child.tag == "RowDefinitionHeaderText" or child.tag == "ArticleName" or child.tag == "RowDefinitionDetails":
+                            #   logging.info('Child: '+child.tag)
+                                encoding = detect_encoding(b'child.text')
+                                print(encoding)
+
+                                process_element(child, namelist, file_name,checked)
+
+                    else:
+                        print("Selected element not found.")
+                
+                new_file_path = os.path.join("C:/TIEDOSTOT/python/mod/tilastokeskus", file_name)
+                #logging.info('Writing file out: '+new_file_path)
+                xml_version="1.0"
+                encoding="ISO-8859-15"
+                xml_declaration = f'<?xml version="{xml_version}" encoding="{encoding}"?>\n'
+                
+        #       with open(new_file_path, "wb") as file:
+        #           #file.write(xml_declaration.encode(encoding))
+        #           tree.write(file, encoding=encoding)
 
     with open(checked_path, "w") as cfile:
 
