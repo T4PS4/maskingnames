@@ -118,6 +118,7 @@ def process_element(element, namelist, file_name, checked):
             logging.info('Element stored to checked list: '+element.text)
             checked.append(element.text)
     else:
+        logging.info('file '+ file_name)
         logging.info('-----> '+element.text+ " masked in file "+file_name)
       
         for indexes in occurrences:
@@ -142,12 +143,11 @@ def process_element(element, namelist, file_name, checked):
 def main():
     logging.info('-------------------------------------------------------------------------------------')
     sourcedirs = []
-    targetdirs = []
+    targetdirs = {}
     sourcedirs.append("C:/TIEDOSTOT/python/masking/sourcefiles/vero")
     sourcedirs.append("C:/TIEDOSTOT/python/masking/sourcefiles/tilastokeskus")
-    targetdirs.append("C:/TIEDOSTOT/python/masking/sourcefiles/vero")
-    targetdirs.append("C:/TIEDOSTOT/python/masking/sourcefiles/tilastokeskus")
-
+    targetdirs["C:/TIEDOSTOT/python/masking/sourcefiles/vero"] = "C:/TIEDOSTOT/python/masking/targetfiles/vero"
+    targetdirs["C:/TIEDOSTOT/python/masking/sourcefiles/tilastokeskus"] = "C:/TIEDOSTOT/python/masking/targetfiles/tilastokeskus"
    
     basedir = "C:/TIEDOSTOT/python/masking"
 
@@ -159,7 +159,7 @@ def main():
             checked = [line.strip() for line in checkedfile]      
 
     namelist =[]
-    names_path = "C:/TIEDOSTOT/python/masking/sukunimet"
+    names_path = "C:/TIEDOSTOT/python/masking/nimet"
 
 #    print(detectfile(names_path))
     
@@ -180,14 +180,8 @@ def main():
                     xml_content = xml_file.read()
                 root = ET.fromstring(xml_content)
 
-
-
-
-
                 lista = []
                 elements_to_process = get_elements(root, lista)
-
-            
             
                 for selected_element in elements_to_process:
                     if selected_element is not None:
@@ -195,23 +189,25 @@ def main():
                         for child in selected_element:
                             if child.tag == "RowDefinitionHeaderText" or child.tag == "ArticleName" or child.tag == "RowDefinitionDetails":
                             #   logging.info('Child: '+child.tag)
-                                encoding = detect_encoding(b'child.text')
-                                print(encoding)
 
                                 process_element(child, namelist, file_name,checked)
 
                     else:
                         print("Selected element not found.")
-                
-                new_file_path = os.path.join("C:/TIEDOSTOT/python/mod/tilastokeskus", file_name)
-                #logging.info('Writing file out: '+new_file_path)
+                newfn = targetdirs[directory_path]
+                new_file_path = os.path.join(newfn, file_name)
+  
+                tree = ET.ElementTree(root)
+
+   #
+   #              logging.info('Writing file out: '+new_file_path)
                 xml_version="1.0"
                 encoding="ISO-8859-15"
                 xml_declaration = f'<?xml version="{xml_version}" encoding="{encoding}"?>\n'
                 
-        #       with open(new_file_path, "wb") as file:
-        #           #file.write(xml_declaration.encode(encoding))
-        #           tree.write(file, encoding=encoding)
+                with open(new_file_path, "wb") as fileout:
+                   #file.write(xml_declaration.encode(encoding))
+                   tree.write(fileout, encoding=encoding, xml_declaration=True)
 
     with open(checked_path, "w") as cfile:
 
