@@ -1,4 +1,11 @@
 import chardet
+from fuzzywuzzy import fuzz
+
+
+def getsimilarityscore(string1, string2):
+    return fuzz.ratio(string1, string2)
+
+
 
 def detectfile(file):
     with open(file, 'rb') as f:

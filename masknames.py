@@ -5,7 +5,7 @@ import Levenshtein
 import re
 import logging
 import tkinter as tk
-from masklib import ask_to_mask, namebody, get_elements, detect_encoding, utf8_to_iso8859, detectfile
+from masklib import ask_to_mask, namebody, get_elements, detect_encoding, utf8_to_iso8859, detectfile, getsimilarityscore
 
 
 def tobe_masked(word, namelist, wholetext):
@@ -14,6 +14,11 @@ def tobe_masked(word, namelist, wholetext):
          
     for name in namelist:
         name = name.lower()
+        x = getsimilarityscore(name, word)
+        if x > 85:
+            logging.info(f"sana: {word} nimi: { name}  score: {x}")
+
+"""
  #       logging.info(word+'  '+name)
         if name == word:
    #         logging.info(f"exact match   {name} ::::         {wholetext} ")
@@ -22,7 +27,7 @@ def tobe_masked(word, namelist, wholetext):
 
     for name in namelist:
         name = name.lower()
-
+        
         if word.startswith(name) or word.endswith(name) and len(word) > 2:
    #         logging.info(f"exact match as substring at beginning or end: {name} word {word} ::::       {wholetext}")
             print(f"exact match as substring at beginning or end: {name} word {word} ::::       {wholetext} ")
@@ -48,7 +53,7 @@ def tobe_masked(word, namelist, wholetext):
                         return False
 
     return False
-
+"""
 
 
     
@@ -74,6 +79,7 @@ def process_element(element, namelist, file_name, checked):
 
     nonewlines = elemtext.replace("\n", " ")
     rawtext = nonewlines.replace("", "")
+    rawtext = rawtext.replace('\u00A0', " ")
     rawtext = re.sub(patternextra, ' ', rawtext)
     origcase = rawtext.split()
     rawtext = rawtext.lower()
